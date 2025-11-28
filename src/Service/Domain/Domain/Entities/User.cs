@@ -15,42 +15,47 @@ public class User
     {
     }
 
-    protected User(string name)
+    public User(string name)
     {
         Id = Guid.NewGuid();
         Name = name;
     }
-
-    public void AddAdvertisement(Advertisement ad, int maxAdvertisements)
+    
+    public void Update(string name)
     {
-        Guard.Against.Null(ad, nameof(ad));
+        Name = name;
+    }
 
-        if (_advertisements.Count >= maxAdvertisements)
-            throw new InvalidOperationException("Пользователь не может иметь больше чем {maxAdvertisements} объявлений.");
-        _advertisements.Add(ad);
+    public void AddAdvertisement(string text, string pathName, DateTime endDate)
+    {
+        var advertisement = new Advertisement(Id, text, pathName, endDate);
+        _advertisements.Add(advertisement);
     }
 
     public void UpdateAdvertisement(Guid advertisementId, string text, string pathImage, DateTime endDate)
     {
-        var advertisement = _advertisements.FirstOrDefault(x => x.Id == Id);
+        var advertisement = _advertisements.FirstOrDefault(x => x.Id == advertisementId);
         if (advertisement == null)
-            throw new EntityNotFoundException("Объявления с таким Id отсутствует.");
+            throw new EntityNotFoundException($"Объявление с Id {advertisementId} отсутствует.");
         
         advertisement.Update(text, pathImage, endDate);
     }
 
     public void RemoveAdvertisement(Guid advertisementId)
     {
-        var advertisement = _advertisements.FirstOrDefault(x => x.Id == Id);
+        var advertisement = _advertisements.FirstOrDefault(x => x.Id == advertisementId);
         if (advertisement == null)
-            throw new EntityNotFoundException("Объявления с таким Id отсутствует.");
+            throw new EntityNotFoundException($"Объявление с Id {advertisementId} отсутствует.");
 
         _advertisements.Remove(advertisement);
     }
 
-    public List<Advertisement> GetAllAdvertisements()
+    public Advertisement GetAdvertisement(Guid advertisementId)
     {
-        var advertisementList = _advertisements.ToList();
-        return advertisementList;
+        var advertisement = _advertisements.FirstOrDefault(x => x.Id == advertisementId);
+        if (advertisement == null)
+            throw new EntityNotFoundException($"Объявление с Id {advertisementId} отсутствует.");
+       
+        return advertisement;
     }
 }

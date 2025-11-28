@@ -20,7 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{53CC905D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "src\Service\Api\Api\Api.csproj", "{18D34D5B-2A9E-423D-9554-3A447E0B6CBD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "src\Service\Application\Application\Application.csproj", "{5FA6A2A9-1D6A-4936-B70F-3A6CF3298182}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Services", "src\Service\Application\Application.Services\Application.Services.csproj", "{5FA6A2A9-1D6A-4936-B70F-3A6CF3298182}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "src\Service\Domain\Domain\Domain.csproj", "{727C7026-B844-4F93-91B1-75EEA8914BB1}"
 EndProject
@@ -29,6 +29,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Repositories", "src\Service\Infrastructure\Infrastructure.Repositories\Infrastructure.Repositories.csproj", "{15365E2E-E1CF-4284-B12B-A25A9CC7428E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared.Domain", "src\Shared\Domain\Shared.Domain\Shared.Domain.csproj", "{777153F8-3B90-4D17-9C97-ACDB19C3066A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Minio", "src\Service\Infrastructure\Infrastructure.Minio\Infrastructure.Minio.csproj", "{5C59B6CD-EF89-4FB8-9768-F3AE9E46C4C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,6 +62,10 @@ Global
 		{777153F8-3B90-4D17-9C97-ACDB19C3066A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{777153F8-3B90-4D17-9C97-ACDB19C3066A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{777153F8-3B90-4D17-9C97-ACDB19C3066A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C59B6CD-EF89-4FB8-9768-F3AE9E46C4C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C59B6CD-EF89-4FB8-9768-F3AE9E46C4C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C59B6CD-EF89-4FB8-9768-F3AE9E46C4C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C59B6CD-EF89-4FB8-9768-F3AE9E46C4C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E353BDF2-E52A-408D-9AEA-349BBFC8AEE8} = {DEED2019-7924-4B55-A1BC-887F39020CE1}
@@ -76,5 +82,6 @@ Global
 		{A3D6C842-2957-4829-87B9-3E4B5B6FF8C2} = {126E09E7-BA46-4081-8751-4F2854B67BA8}
 		{15365E2E-E1CF-4284-B12B-A25A9CC7428E} = {126E09E7-BA46-4081-8751-4F2854B67BA8}
 		{777153F8-3B90-4D17-9C97-ACDB19C3066A} = {7119DAC4-2060-4B14-A61D-74A35EF82CF2}
+		{5C59B6CD-EF89-4FB8-9768-F3AE9E46C4C1} = {126E09E7-BA46-4081-8751-4F2854B67BA8}
 	EndGlobalSection
 EndGlobal

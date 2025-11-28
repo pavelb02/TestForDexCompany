@@ -1,4 +1,9 @@
-using Api.Options;
+using Application.Services.Interfaces;
+using Application.Services.Options;
+using Application.Services.Services;
+using Infrastructure.Minio;
+using Infrastructure.Repositories;
+using Personnel.Application.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,12 +12,18 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.Configure<AdvertisementOptions>(
     builder.Configuration.GetSection("AdvertisementOptions"));
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+builder.Services.AddSingleton<MinioStorageService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {

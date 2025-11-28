@@ -101,9 +101,4 @@ public class Advertisement
         if (!result.IsValid)
             throw new ValidationException(result.Errors);
     }
-
-    public void UpdateRating(int newRating)
-    {
-        Rating = newRating;
-    }
 }

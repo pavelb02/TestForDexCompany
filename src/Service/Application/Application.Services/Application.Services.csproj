@@ -8,7 +8,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\Shared\Domain\Shared.Domain\Shared.Domain.csproj" />
-      <ProjectReference Include="..\Infrastructure.Data\Infrastructure.Data.csproj" />
+      <ProjectReference Include="..\..\Domain\Domain\Domain.csproj" />
+      <ProjectReference Include="..\..\Infrastructure\Infrastructure.Minio\Infrastructure.Minio.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="15.1.0" />
     </ItemGroup>
 
 </Project>
