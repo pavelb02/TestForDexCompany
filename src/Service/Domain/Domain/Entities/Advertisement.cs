@@ -29,7 +29,7 @@ public class Advertisement
     /// <summary>
     /// Путь к картинке
     /// </summary>
-    public string PathImage { get; private set; }
+    public string Image { get; private set; }
 
     /// <summary>
     /// Рейтинг от 0 до X
@@ -53,18 +53,20 @@ public class Advertisement
 
     public Advertisement(
         Guid userId,
+        int number,
         string text,
-        string pathImage,
+        string image,
         DateTime endDate)
     {
         Guard.Against.NullOrWhiteSpace(text, nameof(Text));
-        Guard.Against.NullOrWhiteSpace(pathImage, nameof(PathImage));
+        Guard.Against.NullOrWhiteSpace(image, nameof(Image));
         Guard.Against.Default(endDate, nameof(EndDate));
         
         Id = Guid.NewGuid();
+        Number = number;
         UserId = userId;
         Text = text;
-        PathImage = SetImage(pathImage);
+        Image = SetImage(image);
         StartDate = DateTime.UtcNow;
         EndDate = endDate;
         
@@ -87,13 +89,13 @@ public class Advertisement
         return imageUrl;
     }
 
-    public void Update(string text, string? pathImage, DateTime endDate)
+    public void Update(string text, string? image, DateTime endDate)
     {
         Guard.Against.NullOrWhiteSpace(text, nameof(Text));
         Guard.Against.Default(endDate, nameof(EndDate));
         Text = text;
-        if (pathImage != null)
-            PathImage = SetImage(pathImage);
+        if (image != null)
+            Image = SetImage(image);
         EndDate = endDate;
         
         var validator = new AdvertisementValidator();

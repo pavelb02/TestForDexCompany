@@ -17,8 +17,8 @@ public class AdvertisementEntityTypeConfiguration : IEntityTypeConfiguration<Adv
             .IsRequired()
             .HasMaxLength(4000);
 
-        builder.Property(x => x.PathImage)
-            .HasColumnName("path_image")
+        builder.Property(x => x.Image)
+            .HasColumnName("image")
             .IsRequired()
             .HasMaxLength(500);
         

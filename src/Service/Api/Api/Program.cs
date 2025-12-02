@@ -1,9 +1,9 @@
+using Api.Middleware;
 using Application.Services.Interfaces;
 using Application.Services.Options;
 using Application.Services.Services;
 using Infrastructure.Minio;
 using Infrastructure.Repositories;
-using Personnel.Application.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +24,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

@@ -26,9 +26,9 @@ public class User
         Name = name;
     }
 
-    public void AddAdvertisement(string text, string pathName, DateTime endDate)
+    public void AddAdvertisement(int number, string text, string pathName, DateTime endDate)
     {
-        var advertisement = new Advertisement(Id, text, pathName, endDate);
+        var advertisement = new Advertisement(Id, number, text, pathName, endDate);
         _advertisements.Add(advertisement);
     }
 

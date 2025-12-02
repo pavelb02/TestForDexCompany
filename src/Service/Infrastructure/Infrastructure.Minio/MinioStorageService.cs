@@ -66,21 +66,22 @@ public class MinioStorageService
             .WithBucket(_bucketName)
             .WithObject(objectName));
     }
-
-    public async Task<IEnumerable<string>> ListAsync()
+    
+    public async Task<bool> ExistsAsync(string objectName)
     {
-        var list = new List<string>();
-        var observable = _minio.ListObjectsAsync(new ListObjectsArgs().WithBucket(_bucketName));
-
-        var tcs = new TaskCompletionSource<bool>();
-
-        observable.Subscribe(
-            item => list.Add(item.Key),
-            ex => tcs.TrySetException(ex),
-            () => tcs.TrySetResult(true)
-        );
-
-        await tcs.Task;
-        return list;
+        try
+        {
+            await _minio.StatObjectAsync(
+                new StatObjectArgs()
+                    .WithBucket(_bucketName)
+                    .WithObject(objectName)
+            );
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
+
 }

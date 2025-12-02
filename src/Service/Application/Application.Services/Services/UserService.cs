@@ -4,7 +4,6 @@ using Application.Services.Options;
 using AutoMapper;
 using Domain.Entities;
 using Microsoft.Extensions.Options;
-using Personnel.Application.Services.Interfaces;
 
 namespace Application.Services.Services;
 
@@ -52,7 +51,7 @@ public class UserService : IUserService
         return user.Id;
     }
 
-    public async Task<UserDto> GetUserAsync(Guid userId)
+    public async Task<UserDto> GetUserAsync(Guid userId, bool trackChanges = false)
     {
         var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
         
@@ -65,7 +64,7 @@ public class UserService : IUserService
         
         foreach (var advertisement in user.Advertisements)
         {
-                await _imageService.DeleteImageAsync(advertisement.PathImage);
+                await _imageService.DeleteImageAsync(advertisement.Image);
         }
         
         await _userRepository.Delete(user);
@@ -73,30 +72,26 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task AddAdvertisementAsync(Guid userId, CreateAdvertisementDto createAdvertisementDto)
+    public async Task AddAdvertisementAsync(Guid userId, CreateAdvertisementRequest createAdvertisementRequest)
     {
-        ArgumentNullException.ThrowIfNull(createAdvertisementDto);
+        ArgumentNullException.ThrowIfNull(createAdvertisementRequest);
         var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
         
         if (user.Advertisements.Count >= _maxCountAdvertisements)
             throw new InvalidOperationException("Пользователь не может иметь больше чем {maxAdvertisements} объявлений.");
         
-        user.AddAdvertisement(
-            createAdvertisementDto.Text,
-            createAdvertisementDto.PathImage,
-            createAdvertisementDto.EndDate);
-       
-        await _unitOfWork.SaveChangesAsync();
-    }
-
-    public async Task DeleteAdvertisementAsync(Guid userId, Guid advertisementId)
-    {
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
-        var advertisement = user.GetAdvertisement(advertisementId);
-      
-        await _imageService.DeleteImageAsync(advertisement.PathImage);
-        user.RemoveAdvertisement(advertisementId);
+        int nextNumber = 1;
+        if (user.Advertisements.Any())
+        {
+            nextNumber = user.Advertisements.Max(a => a.Number) + 1;
+        }
         
+        user.AddAdvertisement(
+            nextNumber,
+            createAdvertisementRequest.Text,
+            createAdvertisementRequest.Image,
+            createAdvertisementRequest.EndDate);
+       
         await _unitOfWork.SaveChangesAsync();
     }
 
@@ -105,14 +100,34 @@ public class UserService : IUserService
         ArgumentNullException.ThrowIfNull(updateAdvertisementRequest);
         var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
         
-        await _imageService.DeleteImageAsync(user.GetAdvertisement(updateAdvertisementRequest.Id).PathImage);
+        await _imageService.DeleteImageAsync(user.GetAdvertisement(updateAdvertisementRequest.Id).Image);
         user.UpdateAdvertisement(
             updateAdvertisementRequest.Id,
             updateAdvertisementRequest.Text,
-            updateAdvertisementRequest.PathImage,
+            updateAdvertisementRequest.Image,
             updateAdvertisementRequest.EndDate);
         
         await _unitOfWork.SaveChangesAsync();
         return user.Id;
     }
+    
+    public async Task DeleteAdvertisementAsync(Guid userId, Guid advertisementId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var advertisement = user.GetAdvertisement(advertisementId);
+      
+        await _imageService.DeleteImageAsync(advertisement.Image);
+        user.RemoveAdvertisement(advertisementId);
+        
+        await _unitOfWork.SaveChangesAsync();
+    }
+    
+    public async Task<string> GetImageNameAsync(Guid userId, Guid advertisementId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var advertisement = user.GetAdvertisement(advertisementId);
+        
+        return advertisement.Image;
+    }
+
 }

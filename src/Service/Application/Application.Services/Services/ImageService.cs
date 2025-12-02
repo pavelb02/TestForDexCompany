@@ -1,12 +1,15 @@
-﻿using Infrastructure.Minio;
-using Personnel.Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
+using Infrastructure.Minio;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 
 namespace Application.Services.Services;
 
 public class ImageService : IImageService
 {
     private readonly MinioStorageService _storage;
-
+    
     public ImageService(MinioStorageService storage)
     {
         _storage = storage;
@@ -16,19 +19,39 @@ public class ImageService : IImageService
     {
         var imageName = $"{Guid.NewGuid()}-{fileName}";
 
-        var filePath = await _storage.UploadAsync(imageName, stream, stream.Length, contentType);
+        await _storage.UploadAsync($"original/{imageName}", stream, stream.Length, contentType);
+        
+        stream.Position = 0; 
+        using var img = await Image.LoadAsync(stream);
 
-        return filePath;
+        int width = 300;
+        int height = (int)(img.Height / (img.Width / (double)width));
+
+        img.Mutate(x => x.Resize(width, height));
+
+        var smallStream = new MemoryStream();
+        await img.SaveAsJpegAsync(smallStream, new JpegEncoder());
+        smallStream.Position = 0;
+
+        await _storage.UploadAsync($"small/{imageName}", smallStream, smallStream.Length, "image/jpeg");
+
+        return imageName;
     }
-
-    public async Task<(Stream, string)?> DownloadImageAsync(string fileName)
+    
+    public async Task<(Stream Stream, string FileName)> GetResizedImageAsync(string size, string fileName)
     {
-        var stream = await _storage.DownloadAsync(fileName);
+        string key;
+        if (size == "small") key = $"small/{fileName}";
+        else if (size == "original") key = $"original/{fileName}";
+        else throw new ArgumentException("Размер должен быть 'small' или 'original'.");
+
+        var stream = await _storage.DownloadAsync(key);
         return (stream, fileName);
     }
 
     public async Task DeleteImageAsync(string imageName)
     {
-        await _storage.DeleteAsync(imageName);
+        await _storage.DeleteAsync($"original/{imageName}");
+        await _storage.DeleteAsync($"small/{imageName}");
     }
 }

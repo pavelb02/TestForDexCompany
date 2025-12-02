@@ -8,10 +8,10 @@ public class UnitOfWork : IUnitOfWork
     private readonly TestForDexCompanyDbContext _dbContext;
     public IUserRepository Users { get; }
 
-    public UnitOfWork(TestForDexCompanyDbContext dbContext, IUserRepository personRepository)
+    public UnitOfWork(TestForDexCompanyDbContext dbContext, IUserRepository userRepository)
     {
         _dbContext = dbContext;
-        Users = personRepository;
+        Users = userRepository;
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
