@@ -1,16 +1,24 @@
 using Api.Middleware;
 using Application.Services.Interfaces;
+using Application.Services.Mapping;
 using Application.Services.Options;
 using Application.Services.Services;
+using Infrastructure.Data;
 using Infrastructure.Minio;
 using Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+builder.Services.AddDbContext<TestForDexCompanyDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
 builder.Services.Configure<AdvertisementOptions>(
     builder.Configuration.GetSection("AdvertisementOptions"));
+
+builder.Services.AddAutoMapper(cfg => { }, typeof(UserProfile), typeof(AdvertisementProfile));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();

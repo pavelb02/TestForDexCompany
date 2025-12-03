@@ -46,7 +46,6 @@ public class Advertisement
     /// </summary>
     public DateTime EndDate { get; private set; }
 
-
     protected Advertisement()
     {
     }

@@ -8,7 +8,7 @@ public class User
     public Guid Id { get; private set; }
     public string Name { get; private set; }
 
-    private readonly List<Advertisement> _advertisements = [];
+    private readonly List<Advertisement> _advertisements = new();
     public IReadOnlyCollection<Advertisement> Advertisements => _advertisements.AsReadOnly();
 
     protected User()
