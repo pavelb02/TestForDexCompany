@@ -1,11 +1,10 @@
 ﻿namespace Application.Services.DTO;
 
 public class AdvertisementSearchRequest
-{
-    public int? Number { get; set; }
+{ 
     public Guid? UserId { get; set; }
-    public double? MinRating { get; set; }
-    public double? MaxRating { get; set; }
+    public int? MinRating { get; set; }
+    public int? MaxRating { get; set; }
 
     public string? Text { get; set; }
     

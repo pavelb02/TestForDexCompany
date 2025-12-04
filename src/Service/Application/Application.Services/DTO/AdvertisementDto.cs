@@ -8,5 +8,5 @@ public class AdvertisementDto
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int Number { get; set; }
-    public double Rating { get; set; }
+    public int Rating { get; set; }
 }

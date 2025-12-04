@@ -10,7 +10,12 @@ public class AdvertisementEntityTypeConfiguration : IEntityTypeConfiguration<Adv
     {
         builder.ToTable("advertisements");
 
-        builder.HasKey(x => x.Id);
+        //builder.HasKey(x => x.Id);
+        
+        builder.Property(x => x.Id)
+            .ValueGeneratedOnAdd()
+            .HasDefaultValueSql("gen_random_uuid()")
+            .IsRequired();
         
         builder.Property(x => x.Text)
             .HasColumnName("text")
@@ -38,8 +43,9 @@ public class AdvertisementEntityTypeConfiguration : IEntityTypeConfiguration<Adv
         
         builder
             .HasOne<User>()
-            .WithMany(x => x.Advertisements)
+            .WithMany()
             .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            //.OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
     }
 }

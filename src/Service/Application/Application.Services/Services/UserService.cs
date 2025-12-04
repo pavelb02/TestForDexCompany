@@ -42,7 +42,7 @@ public class UserService : IUserService
     public async Task<Guid> UpdateUserAsync(UpdateUserRequest updateRequest)
     {
         ArgumentNullException.ThrowIfNull(updateRequest);
-        var user = await _userRepository.GetByIdAsync(updateRequest.Id, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(updateRequest.Id, true);
 
         user.Update(updateRequest.Name);
 
@@ -53,14 +53,14 @@ public class UserService : IUserService
 
     public async Task<UserDto> GetUserAsync(Guid userId, bool trackChanges = false)
     {
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(userId, true);
 
         return _mapper.Map<UserDto>(user);
     }
 
     public async Task DeleteUserAsync(Guid userId)
     {
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(userId, true);
 
         foreach (var advertisement in user.Advertisements)
         {
@@ -75,7 +75,7 @@ public class UserService : IUserService
     public async Task AddAdvertisementAsync(Guid userId, CreateAdvertisementRequest createAdvertisementRequest)
     {
         ArgumentNullException.ThrowIfNull(createAdvertisementRequest);
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(userId, true);
 
         if (user.Advertisements.Count >= _maxCountAdvertisements)
             throw new InvalidOperationException(
@@ -99,7 +99,7 @@ public class UserService : IUserService
     public async Task<Guid> UpdateAdvertisementAsync(Guid userId, UpdateAdvertisementRequest updateAdvertisementRequest)
     {
         ArgumentNullException.ThrowIfNull(updateAdvertisementRequest);
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(userId, true);
 
         await _imageService.DeleteImageAsync(user.GetAdvertisement(updateAdvertisementRequest.Id).Image);
         user.UpdateAdvertisement(
@@ -114,7 +114,7 @@ public class UserService : IUserService
 
     public async Task DeleteAdvertisementAsync(Guid userId, Guid advertisementId)
     {
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(userId, true);
         var advertisement = user.GetAdvertisement(advertisementId);
 
         await _imageService.DeleteImageAsync(advertisement.Image);
@@ -125,9 +125,28 @@ public class UserService : IUserService
 
     public async Task<string> GetImageNameAsync(Guid userId, Guid advertisementId)
     {
-        var user = await _userRepository.GetByIdAsync(userId, true).ConfigureAwait(false);
+        var user = await _userRepository.GetByIdAsync(userId, true);
         var advertisement = user.GetAdvertisement(advertisementId);
 
         return advertisement.Image;
+    }
+    
+    public async Task<List<AdvertisementDto>> SearchAsync(AdvertisementSearchRequest searchRequest)
+    {
+        ArgumentNullException.ThrowIfNull(searchRequest);
+        var advertisements = await _userRepository.SearchAsync(searchRequest);
+        return _mapper.Map<List<AdvertisementDto>>(advertisements);
+    }    
+    
+    public async Task SetRatingAsync(RatingRequest rating)
+    {
+        var user = await _userRepository.GetByIdAsync(rating.UserId, true);
+
+        var advertisement = user.Advertisements
+            .FirstOrDefault(x => x.Id == rating.AdvertisementId);
+
+        advertisement.SetRating(rating.Rating);
+
+        await _unitOfWork.SaveChangesAsync();
     }
 }

@@ -10,13 +10,17 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true);
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.Configure<AdvertisementOptions>(
+    builder.Configuration.GetSection("AdvertisementOptions"));
 
 builder.Services.AddDbContext<TestForDexCompanyDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.Configure<AdvertisementOptions>(
-    builder.Configuration.GetSection("AdvertisementOptions"));
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(UserProfile), typeof(AdvertisementProfile));
 

@@ -34,7 +34,7 @@ public class Advertisement
     /// <summary>
     /// Рейтинг от 0 до X
     /// </summary>
-    public double Rating { get; private set; }
+    public int? Rating { get; private set; }
 
     /// <summary>
     /// Дата создания объявления
@@ -61,7 +61,6 @@ public class Advertisement
         Guard.Against.NullOrWhiteSpace(image, nameof(Image));
         Guard.Against.Default(endDate, nameof(EndDate));
         
-        Id = Guid.NewGuid();
         Number = number;
         UserId = userId;
         Text = text;
@@ -86,6 +85,14 @@ public class Advertisement
         }
 
         return imageUrl;
+    }
+    
+    public void SetRating(int value)
+    {
+        if (value < 1 || value > 5)
+            throw new ArgumentOutOfRangeException(nameof(value));
+
+        Rating = value;
     }
 
     public void Update(string text, string? image, DateTime endDate)

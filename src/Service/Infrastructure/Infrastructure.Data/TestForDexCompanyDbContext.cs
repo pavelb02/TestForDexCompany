@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using System.Reflection;
+using Domain.Entities;
 using Infrastructure.Data.EntityConfigurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,13 +15,16 @@ public class TestForDexCompanyDbContext : DbContext
     {
     }
 
+    public TestForDexCompanyDbContext()
+    {
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         if (modelBuilder == null) throw new ArgumentException(nameof(modelBuilder));
 
-        modelBuilder.ApplyConfiguration(new UserEntityTypeConfiguration());
-        modelBuilder.ApplyConfiguration(new AdvertisementEntityTypeConfiguration());
-
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        
         base.OnModelCreating(modelBuilder);
     }
 }

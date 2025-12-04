@@ -20,9 +20,9 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{userId}")]
-    public async Task<IActionResult> GetUser([FromRoute] Guid userId, [FromQuery] bool trackChanges = false)
+    public async Task<IActionResult> GetUser([FromRoute] Guid userId)
     {
-        var response = await _userService.GetUserAsync(userId, trackChanges);
+        var response = await _userService.GetUserAsync(userId, false);
         return Ok(response);
     }
 
@@ -46,6 +46,21 @@ public class UserController : ControllerBase
         await _userService.DeleteUserAsync(userId);
         return NoContent();
     }
+    
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] AdvertisementSearchRequest request)
+    {
+        var advertisements = await _userService.SearchAsync(request);
+
+        return Ok(advertisements);
+    }
+    
+    [HttpPost("{userId}/{advertisementId}/rating")]
+    public async Task<IActionResult> SetRating([FromBody] RatingRequest request)
+    {
+        await _userService.SetRatingAsync(request);
+        return Ok();
+    }
 
     [HttpGet("{userId}/{advertisementId}/image")]
     public async Task<IActionResult> GetImage(
@@ -58,7 +73,6 @@ public class UserController : ControllerBase
         if (string.IsNullOrEmpty(imageFileName))
             return NotFound("Аватарка не найдена.");
 
-        // скачиваем нужный размер
         var result = await _imageService.GetResizedImageAsync(size, imageFileName);
 
         var (stream, fileName) = result;

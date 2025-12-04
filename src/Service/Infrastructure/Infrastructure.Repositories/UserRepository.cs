@@ -23,17 +23,18 @@ public class UserRepository : IUserRepository
 
     public async Task<Guid> UpdateAsync(User user)
     {
+        _dbContext.Users.Update(user);
         return await Task.FromResult(user.Id);
     }
 
     public async Task<User> GetByIdAsync(Guid userId, bool trackChanges)
     {
-        var query = _dbContext.Users.Include(p=>p.Advertisements).AsQueryable();
+        var query = _dbContext.Users.Include(p=> p.Advertisements).AsQueryable();
 
         if (!trackChanges)
             query = query.AsNoTracking();
 
-        var user = await query.FirstOrDefaultAsync(c => c.Id == userId).ConfigureAwait(false);
+        var user = await query.FirstOrDefaultAsync(c => c.Id == userId);
 
         if (user == null)
         {
@@ -48,13 +49,10 @@ public class UserRepository : IUserRepository
         _dbContext.Users.Remove(user);
         return Task.CompletedTask;
     }
-    
+
     public async Task<List<Advertisement>> SearchAsync(AdvertisementSearchRequest request)
     {
         IQueryable<Advertisement> query = _dbContext.Advertisements;
-
-        if (request.Number.HasValue)
-            query = query.Where(x => x.Number == request.Number);
 
         if (request.UserId.HasValue)
             query = query.Where(x => x.UserId == request.UserId);
@@ -67,7 +65,7 @@ public class UserRepository : IUserRepository
 
         if (!string.IsNullOrWhiteSpace(request.Text))
             query = query.Where(x => x.Text.Contains(request.Text));
-        
+
 
         if (request.StartDateFrom.HasValue)
             query = query.Where(x => x.StartDate >= request.StartDateFrom);
@@ -81,26 +79,34 @@ public class UserRepository : IUserRepository
         if (request.EndDateTo.HasValue)
             query = query.Where(x => x.EndDate <= request.EndDateTo);
 
+        var topRated = query
+            .Where(x => x.Rating != null)
+            .OrderByDescending(x => x.Rating)
+            .Take(3);
+
+        var others = query
+            .Where(x => x.Rating == null || !topRated.Contains(x));
 
         if (!string.IsNullOrWhiteSpace(request.SortBy))
         {
-            query = request.SortDesc
-                ? query.OrderByDescending(x => EF.Property<object>(x, request.SortBy))
-                : query.OrderBy(x => EF.Property<object>(x, request.SortBy));
+            others = request.SortDesc
+                ? others.OrderByDescending(x => EF.Property<object>(x, request.SortBy))
+                : others.OrderBy(x => EF.Property<object>(x, request.SortBy));
         }
         else
         {
-            query = query.OrderByDescending(x => x.StartDate);
+            others = others.OrderByDescending(x => x.StartDate);
         }
-        
+
+        var fullQuery = topRated.Concat(others);
 
         if (request.PageNumber > 0 && request.PageSize > 0)
         {
-            query = query
+            fullQuery = fullQuery
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize);
         }
 
-        return await query.ToListAsync();
+        return await fullQuery.ToListAsync();
     }
 }
