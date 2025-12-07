@@ -4,6 +4,7 @@ using Application.Services.Options;
 using AutoMapper;
 using Domain.Entities;
 using Microsoft.Extensions.Options;
+using Shared.Domain.Exceptions;
 
 namespace Application.Services.Services;
 
@@ -39,19 +40,18 @@ public class UserService : IUserService
         return user.Id;
     }
 
-    public async Task<Guid> UpdateUserAsync(UpdateUserRequest updateRequest)
+    public async Task<Guid> UpdateUserAsync(Guid userId, UpdateUserRequest updateRequest)
     {
         ArgumentNullException.ThrowIfNull(updateRequest);
-        var user = await _userRepository.GetByIdAsync(updateRequest.Id, true);
+        var user = await _userRepository.GetByIdAsync(userId, true);
 
         user.Update(updateRequest.Name);
 
-        //await _userRepository.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
         return user.Id;
     }
 
-    public async Task<UserDto> GetUserAsync(Guid userId, bool trackChanges = false)
+    public async Task<UserDto> GetUserAsync(Guid userId)
     {
         var user = await _userRepository.GetByIdAsync(userId, true);
 
@@ -81,14 +81,7 @@ public class UserService : IUserService
             throw new InvalidOperationException(
                 "Пользователь не может иметь больше чем {maxAdvertisements} объявлений.");
 
-        int nextNumber = 1;
-        if (user.Advertisements.Any())
-        {
-            nextNumber = user.Advertisements.Max(a => a.Number) + 1;
-        }
-
         user.AddAdvertisement(
-            nextNumber,
             createAdvertisementRequest.Text,
             createAdvertisementRequest.Image,
             createAdvertisementRequest.EndDate);
@@ -96,14 +89,15 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<Guid> UpdateAdvertisementAsync(Guid userId, UpdateAdvertisementRequest updateAdvertisementRequest)
+    public async Task<Guid> UpdateAdvertisementAsync(Guid userId, Guid advertisementId,
+        UpdateAdvertisementRequest updateAdvertisementRequest)
     {
         ArgumentNullException.ThrowIfNull(updateAdvertisementRequest);
         var user = await _userRepository.GetByIdAsync(userId, true);
 
-        await _imageService.DeleteImageAsync(user.GetAdvertisement(updateAdvertisementRequest.Id).Image);
+        await _imageService.DeleteImageAsync(user.GetAdvertisement(advertisementId).Image);
         user.UpdateAdvertisement(
-            updateAdvertisementRequest.Id,
+            advertisementId,
             updateAdvertisementRequest.Text,
             updateAdvertisementRequest.Image,
             updateAdvertisementRequest.EndDate);
@@ -130,20 +124,23 @@ public class UserService : IUserService
 
         return advertisement.Image;
     }
-    
+
     public async Task<List<AdvertisementDto>> SearchAsync(AdvertisementSearchRequest searchRequest)
     {
         ArgumentNullException.ThrowIfNull(searchRequest);
         var advertisements = await _userRepository.SearchAsync(searchRequest);
         return _mapper.Map<List<AdvertisementDto>>(advertisements);
-    }    
-    
-    public async Task SetRatingAsync(RatingRequest rating)
+    }
+
+    public async Task SetRatingAsync(Guid userId, Guid advertisementId, RatingRequest rating)
     {
-        var user = await _userRepository.GetByIdAsync(rating.UserId, true);
+        var user = await _userRepository.GetByIdAsync(userId, true);
 
         var advertisement = user.Advertisements
-            .FirstOrDefault(x => x.Id == rating.AdvertisementId);
+            .FirstOrDefault(x => x.Id == advertisementId);
+
+        if (advertisement == null)
+            throw new EntityNotFoundException($"Объявление с Id {advertisementId} отсутствует.");
 
         advertisement.SetRating(rating.Rating);
 

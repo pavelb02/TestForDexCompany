@@ -1,4 +1,4 @@
-﻿using Api.ValidationDTO;
+﻿using Api.Validation;
 using Application.Services.DTO;
 using Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -19,10 +19,10 @@ public class UserController : ControllerBase
         _imageService = imageService;
     }
 
-    [HttpGet("{userId}")]
+    [HttpGet("{userId:guid}")]
     public async Task<IActionResult> GetUser([FromRoute] Guid userId)
     {
-        var response = await _userService.GetUserAsync(userId, false);
+        var response = await _userService.GetUserAsync(userId);
         return Ok(response);
     }
 
@@ -33,32 +33,35 @@ public class UserController : ControllerBase
         return StatusCode(201, response);
     }
 
-    [HttpPut]
-    public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest request)
+    [HttpPut("{userId:guid}")]
+    public async Task<IActionResult> UpdateUser([FromRoute] Guid userId, [FromBody] UpdateUserRequest request)
     {
-        var response = await _userService.UpdateUserAsync(request);
+        var response = await _userService.UpdateUserAsync(userId, request);
         return Ok(response);
     }
 
-    [HttpDelete]
+    [HttpDelete("{userId:guid}")]
     public async Task<IActionResult> DeleteUser([FromRoute] Guid userId)
     {
         await _userService.DeleteUserAsync(userId);
         return NoContent();
     }
-    
+
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] AdvertisementSearchRequest request)
     {
-        var advertisements = await _userService.SearchAsync(request);
+        var results = await _userService.SearchAsync(request);
 
-        return Ok(advertisements);
+        return Ok(results);
     }
-    
+
     [HttpPost("{userId}/{advertisementId}/rating")]
-    public async Task<IActionResult> SetRating([FromBody] RatingRequest request)
+    public async Task<IActionResult> SetRating(
+        [FromRoute] Guid userId,
+        [FromRoute] Guid advertisementId,
+        [FromBody] RatingRequest request)
     {
-        await _userService.SetRatingAsync(request);
+        await _userService.SetRatingAsync(userId, advertisementId, request);
         return Ok();
     }
 
@@ -98,6 +101,8 @@ public class UserController : ControllerBase
         [FromForm] CreateAdvertisementRequest request,
         IFormFile imageFile)
     {
+        string? uploadedFile = null;
+
         try
         {
             var validator = new ImageValidator();
@@ -113,41 +118,66 @@ public class UserController : ControllerBase
             await _userService.AddAdvertisementAsync(userId, request);
             return NoContent();
         }
-        catch (ArgumentException ex)
+        catch (Exception ex)
         {
-            return BadRequest(new { Errors = ex.Message });
-        }
-        catch (EntityNotFoundException ex)
-        {
-            return NotFound(new { Errors = ex.Message });
+            if (uploadedFile != null)
+                await _imageService.DeleteImageAsync(uploadedFile);
+
+            if (ex is EntityNotFoundException)
+                return NotFound(new { Errors = ex.Message });
+
+            if (ex is ArgumentException)
+                return BadRequest(new { Errors = ex.Message });
+
+            throw;
         }
     }
 
     /// <summary>
     /// Обновление объявления
     /// </summary>
-    [HttpPut("{userId}/advertisements/{advertisementId}")]
+    [HttpPut("{userId:guid}/advertisements/{advertisementId:guid}")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UpdateAdvertisement(
         [FromRoute] Guid userId,
+        [FromRoute] Guid advertisementId,
         [FromForm] UpdateAdvertisementRequest request,
         IFormFile? imageFile)
     {
-        if (imageFile != null)
+        string? uploadedFile = null;
+
+        try
         {
-            var validator = new ImageValidator();
-            var validationResult = await validator.ValidateAsync(imageFile);
+            if (imageFile != null)
+            {
+                var validator = new ImageValidator();
+                var validationResult = await validator.ValidateAsync(imageFile);
 
-            if (!validationResult.IsValid)
-                return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
+                if (!validationResult.IsValid)
+                    return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            using var stream = imageFile.OpenReadStream();
-            var fileName = await _imageService.UploadImageAsync(stream, imageFile.FileName, imageFile.ContentType);
-            request.Image = fileName;
+                using var stream = imageFile.OpenReadStream();
+                var uploadedImage =
+                    await _imageService.UploadImageAsync(stream, imageFile.FileName, imageFile.ContentType);
+                request.Image = uploadedImage;
+            }
+
+            await _userService.UpdateAdvertisementAsync(userId, advertisementId, request);
+            return NoContent();
         }
+        catch (Exception ex)
+        {
+            if (uploadedFile != null)
+                await _imageService.DeleteImageAsync(uploadedFile);
 
-        await _userService.UpdateAdvertisementAsync(userId, request);
-        return NoContent();
+            if (ex is EntityNotFoundException)
+                return NotFound(new { Errors = ex.Message });
+
+            if (ex is ArgumentException)
+                return BadRequest(new { Errors = ex.Message });
+
+            throw;
+        }
     }
 
     /// <summary>

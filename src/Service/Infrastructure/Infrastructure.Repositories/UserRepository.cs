@@ -1,4 +1,5 @@
 ﻿using Application.Services.DTO;
+using Application.Services.Enums;
 using Application.Services.Interfaces;
 using Domain.Entities;
 using Infrastructure.Data;
@@ -10,6 +11,7 @@ namespace Infrastructure.Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly TestForDexCompanyDbContext _dbContext;
+
     public UserRepository(TestForDexCompanyDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -21,15 +23,9 @@ public class UserRepository : IUserRepository
         return await Task.FromResult(user.Id);
     }
 
-    public async Task<Guid> UpdateAsync(User user)
-    {
-        _dbContext.Users.Update(user);
-        return await Task.FromResult(user.Id);
-    }
-
     public async Task<User> GetByIdAsync(Guid userId, bool trackChanges)
     {
-        var query = _dbContext.Users.Include(p=> p.Advertisements).AsQueryable();
+        var query = _dbContext.Users.Include(p => p.Advertisements).AsQueryable();
 
         if (!trackChanges)
             query = query.AsNoTracking();
@@ -80,18 +76,34 @@ public class UserRepository : IUserRepository
             query = query.Where(x => x.EndDate <= request.EndDateTo);
 
         var topRated = query
-            .Where(x => x.Rating != null)
             .OrderByDescending(x => x.Rating)
             .Take(3);
 
         var others = query
-            .Where(x => x.Rating == null || !topRated.Contains(x));
+            .Where(x => !topRated.Contains(x));
 
-        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        if (request.SortBy.HasValue)
         {
-            others = request.SortDesc
-                ? others.OrderByDescending(x => EF.Property<object>(x, request.SortBy))
-                : others.OrderBy(x => EF.Property<object>(x, request.SortBy));
+            others = request.SortBy.Value switch
+            {
+                AdvertisementSortBy.Rating => request.SortDesc
+                    ? others.OrderByDescending(x => x.Rating)
+                    : others.OrderBy(x => x.Rating),
+
+                AdvertisementSortBy.StartDate => request.SortDesc
+                    ? others.OrderByDescending(x => x.StartDate)
+                    : others.OrderBy(x => x.StartDate),
+
+                AdvertisementSortBy.EndDate => request.SortDesc
+                    ? others.OrderByDescending(x => x.EndDate)
+                    : others.OrderBy(x => x.EndDate),
+
+                AdvertisementSortBy.Number => request.SortDesc
+                    ? others.OrderByDescending(x => x.Number)
+                    : others.OrderBy(x => x.Number),
+
+                _ => others.OrderByDescending(x => x.StartDate)
+            };
         }
         else
         {

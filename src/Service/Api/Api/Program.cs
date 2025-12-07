@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
 using Api.Middleware;
 using Application.Services.Interfaces;
 using Application.Services.Mapping;
 using Application.Services.Options;
 using Application.Services.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Infrastructure.Data;
 using Infrastructure.Minio;
 using Infrastructure.Repositories;
@@ -15,12 +18,17 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidationAutoValidation();
+
 builder.Services.Configure<AdvertisementOptions>(
     builder.Configuration.GetSection("AdvertisementOptions"));
 
 builder.Services.AddDbContext<TestForDexCompanyDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(UserProfile), typeof(AdvertisementProfile));
 

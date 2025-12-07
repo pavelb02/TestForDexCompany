@@ -35,7 +35,7 @@ public class ExceptionHandlingMiddleware
     {
         context.Response.StatusCode = ex switch
         {
-            ArgumentNullException or ArgumentException => StatusCodes.Status400BadRequest,
+            ArgumentOutOfRangeException or ArgumentNullException or ArgumentException => StatusCodes.Status400BadRequest,
             EntityNotFoundException => StatusCodes.Status404NotFound,
             FluentValidation.ValidationException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError

@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Api.ValidationDTO;
+namespace Api.Validation;
 
 public class ImageValidator : AbstractValidator<IFormFile>
 {

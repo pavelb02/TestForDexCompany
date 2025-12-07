@@ -1,5 +1,4 @@
-﻿using Ardalis.GuardClauses;
-using Shared.Domain.Exceptions;
+﻿using Shared.Domain.Exceptions;
 
 namespace Domain.Entities;
 
@@ -20,15 +19,15 @@ public class User
         Id = Guid.NewGuid();
         Name = name;
     }
-    
+
     public void Update(string name)
     {
         Name = name;
     }
 
-    public void AddAdvertisement(int number, string text, string pathName, DateTime endDate)
+    public void AddAdvertisement(string text, string pathName, DateTime endDate)
     {
-        var advertisement = new Advertisement(Id, number, text, pathName, endDate);
+        var advertisement = new Advertisement(Id, text, pathName, endDate);
         _advertisements.Add(advertisement);
     }
 
@@ -37,7 +36,7 @@ public class User
         var advertisement = _advertisements.FirstOrDefault(x => x.Id == advertisementId);
         if (advertisement == null)
             throw new EntityNotFoundException($"Объявление с Id {advertisementId} отсутствует.");
-        
+
         advertisement.Update(text, pathImage, endDate);
     }
 
@@ -55,7 +54,7 @@ public class User
         var advertisement = _advertisements.FirstOrDefault(x => x.Id == advertisementId);
         if (advertisement == null)
             throw new EntityNotFoundException($"Объявление с Id {advertisementId} отсутствует.");
-       
+
         return advertisement;
     }
 }

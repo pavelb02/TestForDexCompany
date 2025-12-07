@@ -10,13 +10,12 @@ public class AdvertisementEntityTypeConfiguration : IEntityTypeConfiguration<Adv
     {
         builder.ToTable("advertisements");
 
-        //builder.HasKey(x => x.Id);
-        
+        builder.HasKey(x => x.Id);
+
         builder.Property(x => x.Id)
-            .ValueGeneratedOnAdd()
-            .HasDefaultValueSql("gen_random_uuid()")
+            .ValueGeneratedNever()
             .IsRequired();
-        
+
         builder.Property(x => x.Text)
             .HasColumnName("text")
             .IsRequired()
@@ -26,11 +25,14 @@ public class AdvertisementEntityTypeConfiguration : IEntityTypeConfiguration<Adv
             .HasColumnName("image")
             .IsRequired()
             .HasMaxLength(500);
-        
+
         builder.Property(x => x.Number)
-            .HasColumnName("number");
-        
+            .HasColumnName("number")
+            .ValueGeneratedOnAdd()
+            .UseIdentityColumn();
+
         builder.Property(x => x.Rating)
+            .HasDefaultValue()
             .HasColumnName("rating");
 
         builder.Property(x => x.StartDate)
@@ -40,12 +42,12 @@ public class AdvertisementEntityTypeConfiguration : IEntityTypeConfiguration<Adv
         builder.Property(x => x.EndDate)
             .HasColumnName("end_date")
             .IsRequired();
-        
+
         builder
             .HasOne<User>()
             .WithMany()
             .HasForeignKey(x => x.UserId)
-            //.OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -34,7 +34,7 @@ public class Advertisement
     /// <summary>
     /// Рейтинг от 0 до X
     /// </summary>
-    public int? Rating { get; private set; }
+    public int Rating { get; private set; }
 
     /// <summary>
     /// Дата создания объявления
@@ -52,7 +52,6 @@ public class Advertisement
 
     public Advertisement(
         Guid userId,
-        int number,
         string text,
         string image,
         DateTime endDate)
@@ -60,14 +59,14 @@ public class Advertisement
         Guard.Against.NullOrWhiteSpace(text, nameof(Text));
         Guard.Against.NullOrWhiteSpace(image, nameof(Image));
         Guard.Against.Default(endDate, nameof(EndDate));
-        
-        Number = number;
+
+        Id = Guid.NewGuid();
         UserId = userId;
         Text = text;
         Image = SetImage(image);
         StartDate = DateTime.UtcNow;
         EndDate = endDate;
-        
+
         var validator = new AdvertisementValidator();
         var result = validator.Validate(this);
         if (!result.IsValid)
@@ -86,11 +85,11 @@ public class Advertisement
 
         return imageUrl;
     }
-    
+
     public void SetRating(int value)
     {
-        if (value < 1 || value > 5)
-            throw new ArgumentOutOfRangeException(nameof(value));
+        if (value is < 1 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(value), "Рейтинг должен быть в диапазоне от 1 до 5.");
 
         Rating = value;
     }
@@ -103,7 +102,7 @@ public class Advertisement
         if (image != null)
             Image = SetImage(image);
         EndDate = endDate;
-        
+
         var validator = new AdvertisementValidator();
         var result = validator.Validate(this);
         if (!result.IsValid)
