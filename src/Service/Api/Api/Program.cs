@@ -33,8 +33,10 @@ builder.Services.AddControllers()
 builder.Services.AddAutoMapper(cfg => { }, typeof(UserProfile), typeof(AdvertisementProfile));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAdvertisementRepository, AdvertisementRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAdvertisementService, AdvertisementService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddSingleton<MinioStorageService>();

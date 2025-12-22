@@ -2,23 +2,27 @@
 using Application.Services.DTO;
 using Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Domain.Exceptions;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly IImageService _imageService;
 
-    public UserController(IUserService userService, IImageService imageService)
+    public UserController(
+        IUserService userService,
+        IImageService imageService)
     {
         _userService = userService;
         _imageService = imageService;
     }
 
+    /// <summary>
+    /// Получить пользователя
+    /// </summary>
     [HttpGet("{userId:guid}")]
     public async Task<IActionResult> GetUser([FromRoute] Guid userId)
     {
@@ -26,6 +30,9 @@ public class UserController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Создать пользователя
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
@@ -33,6 +40,9 @@ public class UserController : ControllerBase
         return StatusCode(201, response);
     }
 
+    /// <summary>
+    /// Обновить пользователя
+    /// </summary>
     [HttpPut("{userId:guid}")]
     public async Task<IActionResult> UpdateUser([FromRoute] Guid userId, [FromBody] UpdateUserRequest request)
     {
@@ -40,6 +50,9 @@ public class UserController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Удалить пользователя
+    /// </summary>
     [HttpDelete("{userId:guid}")]
     public async Task<IActionResult> DeleteUser([FromRoute] Guid userId)
     {
@@ -47,14 +60,9 @@ public class UserController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] AdvertisementSearchRequest request)
-    {
-        var results = await _userService.SearchAsync(request);
-
-        return Ok(results);
-    }
-
+    /// <summary>
+    /// Присвоить рейтинг объявлению
+    /// </summary>
     [HttpPost("{userId}/{advertisementId}/rating")]
     public async Task<IActionResult> SetRating(
         [FromRoute] Guid userId,
@@ -65,30 +73,37 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Получить изображение
+    /// </summary>
     [HttpGet("{userId}/{advertisementId}/image")]
-    public async Task<IActionResult> GetImage(
+    public async Task GetImage(
         [FromRoute] Guid userId,
         [FromRoute] Guid advertisementId,
-        [FromQuery] string size = "original")
+        [FromQuery] string size = "original",
+        CancellationToken cancellationToken = default)
     {
         var imageFileName = await _userService.GetImageNameAsync(userId, advertisementId);
 
         if (string.IsNullOrEmpty(imageFileName))
-            return NotFound("Аватарка не найдена.");
+        {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            await Response.WriteAsync("Аватарка не найдена.", cancellationToken);
+            return;
+        }
 
-        var result = await _imageService.GetResizedImageAsync(size, imageFileName);
-
-        var (stream, fileName) = result;
-
-        var contentType = Path.GetExtension(fileName).ToLower() switch
+        var contentType = Path.GetExtension(imageFileName).ToLower() switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".svg" => "image/svg+xml",
             _ => "application/octet-stream"
         };
-
-        return File(stream, contentType, fileName);
+        
+        Response.ContentType = contentType;
+        Response.Headers.ContentDisposition = $"inline; filename=\"{imageFileName}\"";
+        
+        await _imageService.GetResizedImageAsync(size, imageFileName, Response.Body, cancellationToken);
     }
 
     /// <summary>
@@ -99,37 +114,32 @@ public class UserController : ControllerBase
     public async Task<IActionResult> AddAdvertisement(
         [FromRoute] Guid userId,
         [FromForm] CreateAdvertisementRequest request,
-        IFormFile imageFile)
+        [FromForm] IFormFile imageFile,
+        [FromQuery] int width = 300)
     {
         string? uploadedFile = null;
 
+        var validator = new ImageValidator();
+        var validationResult = await validator.ValidateAsync(imageFile);
+
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
+        
         try
         {
-            var validator = new ImageValidator();
-            var validationResult = await validator.ValidateAsync(imageFile);
-
-            if (!validationResult.IsValid)
-                return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
-
             using var stream = imageFile.OpenReadStream();
-            var avatarUrl = await _imageService.UploadImageAsync(stream, imageFile.FileName, imageFile.ContentType);
-            request.Image = avatarUrl;
-            
+            uploadedFile = await _imageService.UploadImageAsync(stream, imageFile.FileName, imageFile.ContentType, width);
+            request.Image = uploadedFile;
+
             await _userService.AddAdvertisementAsync(userId, request);
             return NoContent();
         }
-        catch (Exception ex)
+        finally
         {
-            if (uploadedFile != null)
+            if (uploadedFile != null && request.Image != uploadedFile)
+            {
                 await _imageService.DeleteImageAsync(uploadedFile);
-
-            if (ex is EntityNotFoundException)
-                return NotFound(new { Errors = ex.Message });
-
-            if (ex is ArgumentException)
-                return BadRequest(new { Errors = ex.Message });
-
-            throw;
+            }
         }
     }
 
@@ -142,7 +152,8 @@ public class UserController : ControllerBase
         [FromRoute] Guid userId,
         [FromRoute] Guid advertisementId,
         [FromForm] UpdateAdvertisementRequest request,
-        IFormFile? imageFile)
+        [FromForm] IFormFile? imageFile,
+        [FromQuery] int width = 300)
     {
         string? uploadedFile = null;
 
@@ -158,25 +169,19 @@ public class UserController : ControllerBase
 
                 using var stream = imageFile.OpenReadStream();
                 var uploadedImage =
-                    await _imageService.UploadImageAsync(stream, imageFile.FileName, imageFile.ContentType);
+                    await _imageService.UploadImageAsync(stream, imageFile.FileName, imageFile.ContentType, width);
                 request.Image = uploadedImage;
             }
 
             await _userService.UpdateAdvertisementAsync(userId, advertisementId, request);
             return NoContent();
         }
-        catch (Exception ex)
+        finally
         {
-            if (uploadedFile != null)
+            if (uploadedFile != null && request.Image != uploadedFile)
+            {
                 await _imageService.DeleteImageAsync(uploadedFile);
-
-            if (ex is EntityNotFoundException)
-                return NotFound(new { Errors = ex.Message });
-
-            if (ex is ArgumentException)
-                return BadRequest(new { Errors = ex.Message });
-
-            throw;
+            }
         }
     }
 

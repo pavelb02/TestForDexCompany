@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Minio;
-using Minio.ApiEndpoints;
 using Minio.DataModel.Args;
+using Shared.Domain.Exceptions;
 
 namespace Infrastructure.Minio;
 
@@ -37,27 +37,39 @@ public class MinioStorageService
     {
         await EnsureBucketExistsAsync();
 
-        await _minio.PutObjectAsync(new PutObjectArgs()
-            .WithBucket(_bucketName)
-            .WithObject(objectName)
-            .WithStreamData(data)
-            .WithObjectSize(size)
-            .WithContentType(contentType));
+        try
+        {
+            await _minio.PutObjectAsync(new PutObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(objectName)
+                .WithStreamData(data)
+                .WithObjectSize(size)
+                .WithContentType(contentType));
+
+            await _minio.StatObjectAsync(new StatObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(objectName));
+        }
+        catch (Exception)
+        {
+            throw new FileStorageException(
+                $"Не удалось сохранить файл '{objectName}");
+        }
 
         return objectName;
     }
 
-    public async Task<Stream> DownloadAsync(string? objectName)
+    public async Task DownloadAsync(
+        string? objectName,
+        Stream stream,
+        CancellationToken cancellationToken = default)
     {
-        var ms = new MemoryStream();
+        ArgumentNullException.ThrowIfNull(stream);
 
         await _minio.GetObjectAsync(new GetObjectArgs()
             .WithBucket(_bucketName)
             .WithObject(objectName)
-            .WithCallbackStream(stream => stream.CopyTo(ms)));
-
-        ms.Position = 0;
-        return ms;
+            .WithCallbackStream(str => str.CopyToAsync(stream, cancellationToken)), cancellationToken);
     }
 
     public async Task DeleteAsync(string objectName)

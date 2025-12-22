@@ -12,6 +12,5 @@ public class CreateAdvertisementRequestValidator : AbstractValidator<CreateAdver
             .MaximumLength(2000).WithMessage("Максимальная длина текста — 2000 символов");
 
         RuleFor(x => x.EndDate)
-            .GreaterThan(DateTime.UtcNow).WithMessage("Дата окончания должна быть в будущем");
-    }
+            .NotEmpty().WithMessage("Дата окончания обязательна.");    }
 }

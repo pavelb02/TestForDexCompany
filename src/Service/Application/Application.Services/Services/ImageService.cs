@@ -15,7 +15,7 @@ public class ImageService : IImageService
         _storage = storage;
     }
 
-    public async Task<string> UploadImageAsync(Stream stream, string fileName, string contentType)
+    public async Task<string> UploadImageAsync(Stream stream, string fileName, string contentType, int width)
     {
         var imageName = $"{Guid.NewGuid()}-{fileName}";
 
@@ -24,34 +24,34 @@ public class ImageService : IImageService
         stream.Position = 0; 
         using var img = await Image.LoadAsync(stream);
 
-        int width = 300;
         int height = (int)(img.Height / (img.Width / (double)width));
 
         img.Mutate(x => x.Resize(width, height));
 
-        var smallStream = new MemoryStream();
-        await img.SaveAsJpegAsync(smallStream, new JpegEncoder());
-        smallStream.Position = 0;
+        var resizedStream = new MemoryStream();
+        await img.SaveAsJpegAsync(resizedStream, new JpegEncoder());
+        resizedStream.Position = 0;
 
-        await _storage.UploadAsync($"small/{imageName}", smallStream, smallStream.Length, "image/jpeg");
+        await _storage.UploadAsync($"resized/{imageName}", resizedStream, resizedStream.Length, "image/jpeg");
 
         return imageName;
     }
     
-    public async Task<(Stream Stream, string FileName)> GetResizedImageAsync(string size, string fileName)
+    public async Task GetResizedImageAsync(string size, string fileName, Stream stream, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(stream);
+        
         string key;
-        if (size == "small") key = $"small/{fileName}";
+        if (size == "resized") key = $"resized/{fileName}";
         else if (size == "original") key = $"original/{fileName}";
-        else throw new ArgumentException("Размер должен быть 'small' или 'original'.");
-
-        var stream = await _storage.DownloadAsync(key);
-        return (stream, fileName);
+        else throw new ArgumentException("Размер должен быть 'resized' или 'original'.");
+        
+        await _storage.DownloadAsync(key, stream, cancellationToken);
     }
 
     public async Task DeleteImageAsync(string imageName)
     {
         await _storage.DeleteAsync($"original/{imageName}");
-        await _storage.DeleteAsync($"small/{imageName}");
+        await _storage.DeleteAsync($"resized/{imageName}");
     }
 }

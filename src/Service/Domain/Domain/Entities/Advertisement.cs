@@ -73,6 +73,9 @@ public class Advertisement
             throw new ValidationException(result.Errors);
     }
 
+    /// <summary>
+    /// Присвоить название изображения
+    /// </summary>
     private static string SetImage(string imageUrl)
     {
         var validator = new ImageValidator();
@@ -86,6 +89,9 @@ public class Advertisement
         return imageUrl;
     }
 
+    /// <summary>
+    /// Присвоить рейтинг
+    /// </summary>
     public void SetRating(int value)
     {
         if (value is < 1 or > 5)
@@ -94,6 +100,9 @@ public class Advertisement
         Rating = value;
     }
 
+    /// <summary>
+    /// Обновить сущность
+    /// </summary>
     public void Update(string text, string? image, DateTime endDate)
     {
         Guard.Against.NullOrWhiteSpace(text, nameof(Text));

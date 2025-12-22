@@ -75,6 +75,9 @@ public class UserService : IUserService
     public async Task AddAdvertisementAsync(Guid userId, CreateAdvertisementRequest createAdvertisementRequest)
     {
         ArgumentNullException.ThrowIfNull(createAdvertisementRequest);
+        
+        await using var tx = await _unitOfWork.BeginTransactionAsync();
+        
         var user = await _userRepository.GetByIdAsync(userId, true);
 
         if (user.Advertisements.Count >= _maxCountAdvertisements)
@@ -87,6 +90,8 @@ public class UserService : IUserService
             createAdvertisementRequest.EndDate);
 
         await _unitOfWork.SaveChangesAsync();
+        
+        await tx.CommitAsync();
     }
 
     public async Task<Guid> UpdateAdvertisementAsync(Guid userId, Guid advertisementId,
@@ -123,13 +128,6 @@ public class UserService : IUserService
         var advertisement = user.GetAdvertisement(advertisementId);
 
         return advertisement.Image;
-    }
-
-    public async Task<List<AdvertisementDto>> SearchAsync(AdvertisementSearchRequest searchRequest)
-    {
-        ArgumentNullException.ThrowIfNull(searchRequest);
-        var advertisements = await _userRepository.SearchAsync(searchRequest);
-        return _mapper.Map<List<AdvertisementDto>>(advertisements);
     }
 
     public async Task SetRatingAsync(Guid userId, Guid advertisementId, RatingRequest rating)

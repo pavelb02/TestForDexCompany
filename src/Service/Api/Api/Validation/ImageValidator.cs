@@ -5,7 +5,7 @@ namespace Api.Validation;
 public class ImageValidator : AbstractValidator<IFormFile>
 {
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".svg"];
-    private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+    private const long MaxFileSize = 5 * 1024 * 1024;
 
     public ImageValidator()
     {
@@ -18,7 +18,7 @@ public class ImageValidator : AbstractValidator<IFormFile>
             .WithMessage($"Размер файла не должен превышать {MaxFileSize / 1024 / 1024} MB.");
 
         RuleFor(file => file.ContentType)
-            .Must(ct => ct.StartsWith("image/"))
+            .Matches("^image/")
             .WithMessage("Файл должен быть изображением.");
     }
 
